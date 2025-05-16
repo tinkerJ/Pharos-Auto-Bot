@@ -2,7 +2,7 @@
   "name": "Pharos-Auto-Bot",
   "version": "1.0.0",
   "description": "Automated bot for Pharos testnet Created By Kazuha",
-  "Autho": "Kazuha787"
+  "author": "Kazuha787",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js"
