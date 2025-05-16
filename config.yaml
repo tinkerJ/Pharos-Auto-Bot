@@ -1,0 +1,64 @@
+# Pharos Auto Bot Configuration
+
+# General Settings
+general:
+  delay_between_accounts: 5000   # Delay between processing accounts (ms)
+  retry_attempts: 3              # Number of retry attempts for failed tasks
+  retry_delay: 3000              # Delay between retries (ms)
+  threads: 2                     # Number of concurrent threads to run
+
+# Tasks Configuration
+tasks:
+  login: true                    # Login to Pharos testnet
+  checkin: true                  # Daily check-in
+  faucet:
+    native: true                 # Claim native PHRS faucet
+    usdc: true                   # Claim USDC faucet
+    usdt: true                  # Claim USDT faucet
+  social:
+    enabled: true                # Enable social tasks
+    follow_x: true               # Task ID 201
+    retweet_x: true              # Task ID 202
+    comment_x: true              # Task ID 203
+    join_discord: true           # Task ID 204
+  onchain:
+    self_transfer:
+      enabled: true              # Enable self-transfer tasks
+      max_count: 91              # Maximum number of transfers to perform
+      amount_options:            # Amount options for transfers (PHRS)
+        - 0.001
+        - 0.05
+        - 0.1
+        - 0.2
+      random_amount: true        # Use random amount from options
+    swap:
+      enabled: true              # Enable swap tasks
+      max_count: 91              # Maximum number of swaps to perform
+      pairs:                     # Trading pairs
+        - from: "PHRS"
+          to: "USDC"
+          amount: 0.002           # Amount to swap
+    liquidity:
+      enabled: true              # Enable add liquidity tasks
+      max_count: 91              # Maximum number of liquidity additions
+      pairs:                     # Liquidity pairs
+        - token0: "USDC"
+          token1: "USDT"
+          amount0: 0.001             # Amount of token0
+          amount1: 0.001             # Amount of token1
+
+# API Settings
+api:
+  pharos:
+    base_url: "https://api.pharosnetwork.xyz"
+    recaptcha_site_key: "6Lfx1iwrAAAAAJp_suDVjStYCUs0keW8tQ722uZR"
+  zenith:
+    base_url: "https://testnet-router.zenithswap.xyz"
+    rpc_url: "https://api.zan.top/node/v1/pharos/testnet/1761472bf26745488907477d23719fb5"
+    subgraph_url: "https://subgraph.zenithswap.xyz/testnet/subgraphs/name/dex-subgraph"
+
+# Recaptcha Settings
+recaptcha:
+  enabled: true
+  service: "capsolver"
+  api_key: "CAP-XXXX"
