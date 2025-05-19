@@ -12,7 +12,7 @@ Perfect for testers, point farmers, and developers who want to automate repetiti
 ## Features
 
 - **Multi-Account Support**  
-  Process unlimited accounts in parallel using `pk.txt`.
+  Process unlimited accounts in parallel using `wallet.json`
 
 - **Proxy Integration**  
   Optional proxy support via `proxy.txt` for IP rotation and privacy.
@@ -42,27 +42,16 @@ Perfect for testers, point farmers, and developers who want to automate repetiti
 
 ```bash
 Pharos-Auto-Bot/
-├── src/
-│   ├── index.js              # Main script entry point
-│   ├── config.js             # Configuration settings
-│   ├── utils/
-│   │   ├── helpers.js        # Utility functions (Axios, proxy parsing, etc.)
-│   │   ├── logger.js         # Logging setup
-│   │   └── wallet.js         # Wallet creation and address utilities
-│   ├── services/
-│   │   ├── auth.js           # Authentication service
-│   │   ├── checkin.js        # Daily check-in service
-│   │   ├── faucet.js         # Faucet claim service
-│   │   ├── social.js         # Social task service
-│   │   ├── transfer.js       # Self-transfer service
-│   │   ├── swap.js           # Swap service
-│   │   └── liquidity.js      # Liquidity addition service
-├── pk.txt                    # Private keys (one per line)
-├── proxy.txt                 # Proxy list (optional)
-├── package.json              # Project dependencies and scripts
-├── node_modules/             # Installed dependencies
-├── README.md                 # This file
-└── LICENSE                   # MIT License
+pharos_bot/
+├── index5.js          # Main script with console-based UI and menu
+├── service.js         # Core logic for tasks, including Unlimited Faucet
+├── chains             # Configuration for Pharos testnet and utilities
+├── wallet.json        # Wallet storage for other tasks
+├── wallet.txt         # Main wallet address for transfers
+├── address.txt        # Generated wallet private keys
+├── package.json       # Node.js project configuration
+├── node_modules/      # Installed dependencies
+└── README.md          # Project documentation
 ```
 ## ⚙️ Requirements
 
@@ -89,9 +78,14 @@ npm install
 ```
 # 3. Configure your settings
 ```
-nano config.js 
+nano wallet.jsom 
 ```
 # or use any code editor
+
+# Put Your `wallet` Adddress in `wallet.txt`
+```
+nano wallet.txt
+```
 
 # 4. Run the bot
 ```
