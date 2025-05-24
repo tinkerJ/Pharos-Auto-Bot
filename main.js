@@ -1,21 +1,27 @@
-import chalk from "chalk";
-import fs from "fs/promises";
-import inquirer from "inquirer";
-import ora from "ora";
-import { swapPharostousdc, swapUsdcToPharos } from "./src/Swap/Swap.js";
-import addLp from "./src/AddLP/addLp.js";
-import login from "./src/Login/login.js";
-import autocheckin from "./src/Login/Autocheckin.js";
-import {
-  verifyTaskSOCIAL,
-  verifyTaskOnchain,
-} from "./src/Login/autoVerifyTask.js";
-import sendToFriend from "./src/SendToFriend/send.js";
-import { generatedWallet } from "./Createwallet.js";
+const chalk = require("chalk").default || require("chalk");
+const path = require("path");
+const fs = require("fs");
+const readline = require("readline");
+const service = require("./service");
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// ---- MENU OPTIONS (Clean, No Emojis) ----
+const menuOptions = [
+  { label: "Account Login", value: "accountLogin" },
+  { label: "Account Check-in", value: "accountCheckIn" },
+  { label: "Account Check", value: "accountCheck" },
+  { label: "Claim Faucet PHRS", value: "accountClaimFaucet" },
+  { label: "Claim Faucet USDC", value: "claimFaucetUSDC" },
+  { label: "Swap PHRS to USDC", value: "performSwapUSDC" },
+  { label: "Swap PHRS to USDT", value: "performSwapUSDT" },
+  { label: "Add Liquidity PHRS-USDC", value: "addLpUSDC" },
+  { label: "Add Liquidity PHRS-USDT", value: "addLpUSDT" },
+  { label: "Random Transfer", value: "randomTransfer" },
+  { label: "Social Task", value: "socialTask" },
+  { label: "Set Transaction Count", value: "setTransactionCount" },
+  { label: "Exit", value: "exit" },
+];
 
-// ASCII Banner
+// ---- BANNER ----
 const asciiBannerLines = [
   "██████╗     ██╗  ██╗     █████╗     ██████╗      ██████╗     ███████╗",
   "██╔══██╗    ██║  ██║    ██╔══██╗    ██╔══██╗    ██╔═══██╗    ██╔════╝",
@@ -28,299 +34,209 @@ const asciiBannerLines = [
   "                  LETS FUCK THIS TESTNET                   ",
 ];
 
-const displayBanner = () => {
-  console.log("\n\n\n");
-  asciiBannerLines.forEach((line) => console.log(chalk.cyan.bold(line)));
-  console.log("\n\n");
-};
+// ---- GLOBAL VARIABLES ----
+global.selectedWallets = [];
+global.maxTransaction = 5;
 
-const loadWallets = async () => {
-  const spinner = ora(chalk.blue("Loading wallets...")).start();
+// ---- UTILITY FUNCTIONS ----
+// Load wallets
+function loadWallets() {
   try {
-    const wallets = (await fs.readFile("wallet.txt", "utf-8"))
-      .replace(/\r/g, "")
-      .split("\n")
-      .filter(Boolean);
-    if (wallets.length === 0) {
-      spinner.fail(chalk.red("No wallets found. Generating new wallets..."));
-      const result = await generatedWallet();
-      spinner.succeed(chalk.green(`Wallets generated: ${result}`));
-      spinner.info("Please run the script again.");
-      return null;
-    }
-    spinner.succeed(chalk.green("Wallets loaded successfully."));
-    return wallets;
-  } catch (error) {
-    spinner.fail(chalk.red(`Error loading wallets: ${error.message}`));
-    return null;
+    const walletPath = path.join(__dirname, "wallet.json");
+    const data = fs.readFileSync(walletPath, "utf8");
+    const json = JSON.parse(data);
+    global.selectedWallets = json.wallets || [];
+    return global.selectedWallets;
+  } catch {
+    return [];
   }
-};
+}
 
-const mainMenu = async () => {
-  const { action } = await inquirer.prompt([
-    {
-      type: "list",
-      name: "action",
-      message: chalk.blue("Select an action:"),
-      choices: [
-        "Check Balance",
-        "Swap Tokens",
-        "Add Liquidity",
-        "Send Tokens to Friend",
-        "Exit",
-      ],
-    },
-  ]);
-  return action;
-};
+// Format log messages with vibrant colors
+function formatLogMessage(msg) {
+  const timestamp = new Date().toLocaleTimeString("en-US", { hour12: false });
+  msg = (msg || "").toString().trim();
+  if (!msg) return chalk.hex("#CCCCCC")(`[${timestamp}] Empty log`);
 
-const promptSwapDetails = async () => {
-  const { amount, times } = await inquirer.prompt([
-    {
-      type: "input",
-      name: "amount",
-      message: chalk.blue("Enter the amount to swap:"),
-      validate: (input) =>
-        !isNaN(input) && Number(input) > 0
-          ? true
-          : "Please enter a valid number greater than 0",
-    },
-    {
-      type: "input",
-      name: "times",
-      message: chalk.blue("How many times to swap?"),
-      validate: (input) =>
-        !isNaN(input) && Number(input) > 0
-          ? true
-          : "Please enter a valid number greater than 0",
-    },
-  ]);
-  return { amount: Number(amount), times: Number(times) };
-};
+  const parts = msg.split("|").map((s) => s?.trim() || "");
+  const walletName = parts[0] || "System";
 
-const promptLiquidityDetails = async () => {
-  const { amount, times } = await inquirer.prompt([
-    {
-      type: "input",
-      name: "amount",
-      message: chalk.blue("Enter the amount for liquidity:"),
-      validate: (input) =>
-        !isNaN(input) && Number(input) > 0
-          ? true
-          : "Please enter a valid number greater than 0",
-    },
-    {
-      type: "input",
-      name: "times",
-      message: chalk.blue("How many times to add liquidity?"),
-      validate: (input) =>
-        !isNaN(input) && Number(input) > 0
-          ? true
-          : "Please enter a valid number greater than 0",
-    },
-  ]);
-  return { amount: Number(amount), times: Number(times) };
-};
-
-const promptSendDetails = async () => {
-  const { amount, times, recipient } = await inquirer.prompt([
-    {
-      type: "input",
-      name: "amount",
-      message: chalk.blue("Enter the amount to send:"),
-      validate: (input) =>
-        !isNaN(input) && Number(input) > 0
-          ? true
-          : "Please enter a valid number greater than 0",
-    },
-    {
-      type: "input",
-      name: "times",
-      message: chalk.blue("How many times to send tokens?"),
-      validate: (input) =>
-        !isNaN(input) && Number(input) > 0
-          ? true
-          : "Please enter a valid number greater than 0",
-    },
-    {
-      type: "input",
-      name: "recipient",
-      message: chalk.blue("Enter the recipient address:"),
-      validate: (input) => (input ? true : "Please enter a recipient address"),
-    },
-  ]);
-  return { amount: Number(amount), times: Number(times), recipient };
-};
-
-const executeSwap = async (wallet, amount, times, jwt, address) => {
-  // Gas settings for faster transactions
-  const gasSettings = {
-    maxPriorityFeePerGas: "2000000000", // 2 Gwei
-    maxFeePerGas: "100000000000", // 100 Gwei
-  };
-
-  for (let i = 0; i < times; i++) {
-    const spinner = ora(
-      chalk.blue(`Swapping ${i + 1}/${times} for wallet ${address}...`)
-    ).start();
-    try {
-      // Pass gas settings to swap functions
-      const swap1 = await swapPharostousdc(wallet, jwt, amount, gasSettings);
-      const swap2 = await swapUsdcToPharos(wallet, amount, gasSettings);
-      const swap2Message = swap2 ? swap2.message : "USDC to Pharos failed";
-      spinner.succeed(
-        chalk.green(
-          `Swap ${i + 1}/${times}: Pharos to USDC: ${swap1.message}, USDC to Pharos: ${swap2Message}`
-        )
-      );
-      if (swap1.txHash) {
-        const verifySpinner = ora(chalk.blue("Verifying onchain task...")).start();
-        await verifyTaskOnchain(jwt, address, swap1.txHash, null, null);
-        verifySpinner.succeed(chalk.green("Onchain task verified."));
-      }
-      await delay(5000); // Reduced delay to 5 seconds for faster execution
-    } catch (error) {
-      spinner.fail(chalk.red(`Swap ${i + 1}/${times} failed: ${error.message}`));
-      if (error.message.includes("cu limit exceeded")) {
-        spinner.warn(chalk.yellow("Rate limit exceeded. Waiting longer..."));
-        await delay(30000);
-      }
-    }
-  }
-};
-
-const executeAddLiquidity = async (wallet, amount, times, jwt, address) => {
-  // Gas settings for faster transactions
-  const gasSettings = {
-    maxPriorityFeePerGas: "2000000000", // 2 Gwei
-    maxFeePerGas: "100000000000", // 100 Gwei
-  };
-
-  for (let i = 0; i < times; i++) {
-    const spinner = ora(
-      chalk.blue(`Adding liquidity ${i + 1}/${times} for wallet ${address}...`)
-    ).start();
-    try {
-      // Pass gas settings to addLp
-      const result = await addLp(wallet, amount, gasSettings);
-      spinner.succeed(chalk.green(`Add Liquidity ${i + 1}/${times}: ${result.message}`));
-      if (result.txHash) {
-        const verifySpinner = ora(chalk.blue("Verifying onchain task...")).start();
-        await verifyTaskOnchain(jwt, address, null, result.txHash, null);
-        verifySpinner.succeed(chalk.green("Onchain task verified."));
-      }
-      await delay(5000); // Reduced delay to 5 seconds
-    } catch (error) {
-      spinner.fail(chalk.red(`Add Liquidity ${i + 1}/${times} failed: ${error.message}`));
-      if (error.message.includes("cu limit exceeded")) {
-        spinner.warn(chalk.yellow("Rate limit exceeded. Waiting longer..."));
-        await delay(30000);
-      }
-    }
-  }
-};
-
-const executeSendToFriend = async (wallet, amount, times, recipient, jwt, address) => {
-  // Gas settings for faster transactions
-  const gasSettings = {
-    maxPriorityFeePerGas: "2000000000", // 2 Gwei
-    maxFeePerGas: "100000000000", // 100 Gwei
-  };
-
-  for (let i = 0; i < times; i++) {
-    const spinner = ora(
-      chalk.blue(`Sending tokens ${i + 1}/${times} for wallet ${address}...`)
-    ).start();
-    try {
-      // Pass gas settings to sendToFriend
-      const result = await sendToFriend(wallet, amount, recipient, gasSettings);
-      spinner.succeed(chalk.green(`Send to Friend ${i + 1}/${times}: ${result.message}`));
-      if (result.txHash) {
-        const verifySpinner = ora(chalk.blue("Verifying onchain task...")).start();
-        await verifyTaskOnchain(jwt, address, null, null, result.txHash);
-        verifySpinner.succeed(chalk.green("Onchain task verified."));
-      }
-      await delay(5000); // Reduced delay to 5 seconds
-    } catch (error) {
-      spinner.fail(chalk.red(`Send to Friend ${i + 1}/${times} failed: ${error.message}`));
-      if (error.message.includes("cu limit exceeded")) {
-        spinner.warn(chalk.yellow("Rate limit exceeded. Waiting longer..."));
-        await delay(30000);
-      }
-    }
-  }
-};
-
-const checkBalance = async (address) => {
-  const spinner = ora(chalk.blue(`Fetching balance for wallet ${address}...`)).start();
-  try {
-    const balances = await getBalances(address);
-    spinner.succeed(
-      chalk.green(
-        `Wallet ${address}\nPharos balance: ${balances.pharos}\nUSDC balance: ${balances.usdc}`
-      )
+  // Transaction Confirmation or Success (Green)
+  if (parts.length >= 3 && (parts[2]?.includes("Confirmed") || parts[2]?.includes("claimed successfully"))) {
+    const logParts = parts[2].split(/Confirmed:|claimed successfully:/);
+    const message = logParts[0]?.trim() || "";
+    const hashPart = logParts[1]?.trim() || "";
+    return chalk.green.bold(
+      `[${timestamp}] ${walletName.padEnd(25)} | ${message}${hashPart ? "Confirmed: " : "claimed successfully: "}${chalk.greenBright.bold(hashPart || "0.2 PHRS")}`
     );
-  } catch (error) {
-    spinner.fail(chalk.red(`Failed to fetch balance: ${error.message}`));
   }
-};
 
-// Placeholder balance function (replace with actual implementation)
-const getBalances = async (address) => {
-  // Replace with actual balance-fetching logic (e.g., from contract or API)
+  // Transaction Initiation (Purple)
+  if (
+    parts.length >= 2 &&
+    (parts[1]?.includes("Initiating") || parts[1]?.includes("Claiming") || parts[1]?.includes("Checking") || parts[1]?.includes("Generating"))
+  ) {
+    return chalk.hex("#C71585").bold(
+      `[${timestamp}] ${walletName.padEnd(25)} | ${parts[1]}`
+    );
+  }
+
+  // Warnings (Yellow)
+  if (parts.length >= 2 && parts[1]?.includes("Warning")) {
+    return chalk.yellow.bold(
+      `[${timestamp}] ${walletName.padEnd(25)} | ${parts.slice(1).join(" | ")}`
+    );
+  }
+
+  // Errors (Red)
+  if (msg.includes("Error") || msg.includes("Failed")) {
+    const errorMsg = parts.length > 2 ? parts.slice(2).join(" | ").replace(/\d{2}:\d{2}:\d{2}\s*\|\s*\d{2}-\d{2}-\d{4}/, "").trim() : msg;
+    return chalk.red.bold(
+      `[${timestamp}] ${walletName.padEnd(25)} | ${errorMsg}`
+    );
+  }
+
+  // System Messages (Gray)
+  return chalk.hex("#CCCCCC")(
+    `[${timestamp}] ${walletName.padEnd(25)} | ${parts.slice(parts.length >= 2 ? 1 : 0).join(" | ") || msg}`
+  );
+}
+
+// Spinner animation
+const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+function createSpinner(text) {
+  let frameIndex = 0;
+  let stopped = false;
+
+  const interval = setInterval(() => {
+    if (stopped) return;
+    process.stdout.write(`\r${chalk.green(spinnerFrames[frameIndex])} ${chalk.greenBright(text)}`);
+    frameIndex = (frameIndex + 1) % spinnerFrames.length;
+  }, 100);
+
   return {
-    pharos: 216.130785737670596822, // Placeholder value
-    usdc: 10325.938396911950185811, // Placeholder value
+    stop: () => {
+      stopped = true;
+      clearInterval(interval);
+      process.stdout.write("\r\x1b[K"); // Clear line
+    },
   };
-};
+}
 
-(async () => {
+// Readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+// Input prompt
+function requestInput(promptText, type = "text", defaultValue = "") {
+  return new Promise((resolve) => {
+    rl.question(chalk.greenBright(`${promptText}${defaultValue ? ` [${defaultValue}]` : ""}: `), (value) => {
+      if (type === "number") value = Number(value);
+      if (value === "" || (type === "number" && isNaN(value))) value = defaultValue;
+      resolve(value);
+    });
+  });
+}
+
+// Display banner
+function displayBanner() {
+  console.clear();
+  console.log(chalk.hex("#D8BFD8").bold(asciiBannerLines.join("\n")));
+  console.log();
+}
+
+// Display menu
+function displayMenu() {
+  console.log(chalk.blueBright.bold("\n>═══ Pharos Testnet Bot Menu ═══<"));
+  menuOptions.forEach((opt, idx) => {
+    const optionNumber = `${idx + 1}`.padStart(2, '0'); // Two-digit numbering
+    console.log(chalk.blue(`  ${optionNumber} > ${opt.label.padEnd(35)} <`));
+  });
+  console.log(chalk.blueBright.bold(">═══════════════════════════════<\n"));
+}
+
+// ---- MAIN ----
+async function main() {
+  // Logger
+  const logger = (message) => console.log(formatLogMessage(message));
+
+  // Initialize
   displayBanner();
-  const wallets = await loadWallets();
-  if (!wallets) return;
+  loadWallets();
+  logger(`System | Pharos Bot started. Wallets loaded: ${global.selectedWallets.length}`);
 
+  // Initial transaction count
+  const txCount = await requestInput("Enter number of transactions", "number", "5");
+  if (isNaN(txCount) || txCount <= 0) {
+    global.maxTransaction = 5;
+    logger("System | Invalid transaction count. Using default: 5");
+  } else {
+    global.maxTransaction = txCount;
+    logger(`System | Set transaction count to: ${txCount}`);
+  }
+
+  // Main loop
   while (true) {
-    const action = await mainMenu();
+    displayBanner();
+    displayMenu();
+    const choice = await requestInput("Select an option (1-13)", "number");
+    const idx = choice - 1;
 
-    if (action === "Exit") {
-      console.log(chalk.yellow("Exiting..."));
-      break;
+    if (isNaN(idx) || idx < 0 || idx >= menuOptions.length) {
+      logger("System | Invalid option. Try again.");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      continue;
     }
 
-    for (const wallet of wallets) {
-      const spinner = ora(chalk.blue(`Logging in for wallet ${wallet}...`)).start();
-      try {
-        const { message, jwt, address } = await login(wallet);
-        if (!message || !jwt) {
-          spinner.fail(chalk.red("Login failed for wallet, skipping..."));
-          continue;
-        }
-        spinner.succeed(chalk.green(`${message}\nWallet: ${address}`));
+    const selected = menuOptions[idx];
+    if (selected.value === "exit") {
+      logger("System | Exiting...");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      rl.close();
+      process.exit(0);
+    }
 
-        const checkinSpinner = ora(chalk.blue("Performing autocheckin...")).start();
-        const checkinResult = await autocheckin(jwt, address);
-        checkinSpinner.succeed(chalk.green(checkinResult));
-
-        const socialSpinner = ora(chalk.blue("Verifying social task...")).start();
-        const socialResult = await verifyTaskSOCIAL(jwt, address);
-        socialSpinner.succeed(chalk.green(socialResult));
-
-        if (action === "Check Balance") {
-          await checkBalance(address);
-        } else if (action === "Swap Tokens") {
-          const { amount, times } = await promptSwapDetails();
-          await executeSwap(wallet, amount, times, jwt, address);
-          // Explicitly avoid balance check after swap
-        } else if (action === "Add Liquidity") {
-          const { amount, times } = await promptLiquidityDetails();
-          await executeAddLiquidity(wallet, amount, times, jwt, address);
-        } else if (action === "Send Tokens to Friend") {
-          const { amount, times, recipient } = await promptSendDetails();
-          await executeSendToFriend(wallet, amount, times, recipient, jwt, address);
-        }
-      } catch (error) {
-        spinner.fail(chalk.red(`Error processing wallet: ${error.message}`));
+    if (selected.value === "setTransactionCount") {
+      const newTxCount = await requestInput("Enter number of transactions", "number", global.maxTransaction.toString());
+      if (isNaN(newTxCount) || newTxCount <= 0) {
+        logger("System | Invalid transaction count. Keeping current: " + global.maxTransaction);
+      } else {
+        global.maxTransaction = newTxCount;
+        logger(`System | Set transaction count to: ${newTxCount}`);
       }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      continue;
     }
+
+    try {
+      const spinner = createSpinner(`Running ${selected.label}...`);
+      logger(`System | Starting ${selected.label}...`);
+      const scriptFunc = service[selected.value];
+      if (scriptFunc) {
+        await scriptFunc(logger);
+        logger(`System | ${selected.label} completed.`);
+      } else {
+        logger(`System | Error: ${selected.label} not implemented.`);
+      }
+      spinner.stop();
+    } catch (e) {
+      logger(`System | Error in ${selected.label}: ${chalk.red(e.message)}`);
+      spinner.stop();
+    }
+
+    await requestInput("Press Enter to continue...");
+  }
+}
+
+// ---- Run ----
+(async () => {
+  try {
+    await main();
+  } catch (error) {
+    console.error(chalk.red(`Fatal error: ${error.message}`));
+    rl.close();
+    process.exit(1);
   }
 })();
