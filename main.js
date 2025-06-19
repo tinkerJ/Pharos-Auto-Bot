@@ -17,6 +17,10 @@ const menuOptions = [
   { label: "Add Liquidity PHRS-USDT", value: "addLpUSDT" },
   { label: "Random Transfer", value: "randomTransfer" },
   { label: "Social Task", value: "socialTask" },
+  { label: "Mint Gotchipus", value: "mintGotchipus" },
+  { label: "OpenFi", value: "openFi" },
+  { label: "Deploy Pharos", value: "deployPharos" }, // Added Deploy Pharos option
+  { label: "Auto All", value: "autoAll" },
   { label: "Set Transaction Count", value: "setTransactionCount" },
   { label: "Exit", value: "exit" },
 ];
@@ -62,19 +66,19 @@ function formatLogMessage(msg) {
   const walletName = parts[0] || "System";
 
   // Transaction Confirmation or Success (Green)
-  if (parts.length >= 3 && (parts[2]?.includes("Confirmed") || parts[2]?.includes("claimed successfully"))) {
-    const logParts = parts[2].split(/Confirmed:|claimed successfully:/);
+  if (parts.length >= 3 && (parts[2]?.includes("Confirmed") || parts[2]?.includes("claimed successfully") || parts[2]?.includes("NFT minted successfully") || parts[2]?.includes("Transaction confirmed"))) {
+    const logParts = parts[2].split(/Confirmed:|claimed successfully:|NFT minted successfully:|Transaction confirmed:/);
     const message = logParts[0]?.trim() || "";
     const hashPart = logParts[1]?.trim() || "";
     return chalk.green.bold(
-      `[${timestamp}] ${walletName.padEnd(25)} | ${message}${hashPart ? "Confirmed: " : "claimed successfully: "}${chalk.greenBright.bold(hashPart || "0.2 PHRS")}`
+      `[${timestamp}] ${walletName.padEnd(25)} | ${message}${hashPart ? "Confirmed: " : hashPart.includes("PHRS") ? "claimed successfully: " : hashPart.includes("Tx Hash") ? "Transaction confirmed: " : "NFT minted successfully: "}${chalk.greenBright.bold(hashPart || "0.2 PHRS")}`
     );
   }
 
   // Transaction Initiation (Purple)
   if (
     parts.length >= 2 &&
-    (parts[1]?.includes("Initiating") || parts[1]?.includes("Claiming") || parts[1]?.includes("Checking") || parts[1]?.includes("Generating"))
+    (parts[1]?.includes("Initiating") || parts[1]?.includes("Claiming") || parts[1]?.includes("Checking") || parts[1]?.includes("Generating") || parts[1]?.includes("Minting") || parts[1]?.includes("Processing"))
   ) {
     return chalk.hex("#C71585").bold(
       `[${timestamp}] ${walletName.padEnd(25)} | ${parts[1]}`
@@ -181,7 +185,7 @@ async function main() {
   while (true) {
     displayBanner();
     displayMenu();
-    const choice = await requestInput("Select an option (1-13)", "number");
+    const choice = await requestInput("Select an option (1-17)", "number"); // Updated to 1-17
     const idx = choice - 1;
 
     if (isNaN(idx) || idx < 0 || idx >= menuOptions.length) {
