@@ -20,12 +20,49 @@ Perfect for testers, point farmers, and developers who want to automate repetiti
 - **Modular Architecture**  
   Clearly separated services and utilities for clean, scalable code.
 
-- **Task Automation**  
-  Automates:
-  - Daily check-ins
-  - Native/Token (USDC, USDT) faucet claims
-  - Social tasks (Follow on X, Retweet, Comment, Join Discord)
-  - On-chain actions (Self-transfers, Token swaps, Add liquidity)
+- ## Task Automation  
+  
+1. **Account Management**:
+   - Logs into accounts.
+   - Performs account check-ins.
+   - Checks account status.
+
+2. **Faucet Claims**:
+   - Claims PHRS tokens from the faucet.
+   - Claims USDC tokens from the faucet.
+
+3. **Token Swaps**:
+   - Swaps PHRS to USDC.
+   - Swaps PHRS to USDT.
+
+4. **Liquidity Provision**:
+   - Adds liquidity to PHRS-USDC pool.
+   - Adds liquidity to PHRS-USDT pool.
+
+5. **Random Transfers**:
+   - Executes random token transfers.
+
+6. **Social Tasks**:
+   - Performs social-related tasks (details not specified).
+
+7. **NFT Minting**:
+   - Mints Gotchipus NFTs.
+
+8. **OpenFi Operations**:
+   - Executes OpenFi-related tasks (details not specified).
+
+9. **Pharos Deployment**:
+   - Deploys Pharos (details not specified).
+
+10. **Auto All**:
+    - Runs all tasks automatically in a batch.
+
+11. **Transaction Count Configuration**:
+    - Allows setting the number of transactions to perform (default: 5).
+
+12. **Exit**:
+    - Terminates the bot.
+    - 
 
 - **Multi-Threaded Execution**  
   Efficient task handling using asynchronous JavaScript threading.
