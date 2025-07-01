@@ -1,8 +1,14 @@
 {
   "wallets": [
     {
-      "name": "name",
-      "privatekey": "your_privte_key"
+      "name": "nier1",
+      "privatekey": "0xb4f8e1bc8ad045cfce5dd7c71d1ba8f843d446e21572ae7d2d898a41eb86305b",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODI4OTYwMTUsImlhdCI6MTc1MTM2MDAxNSwic3ViIjoiMHhGMTEwNDk4OTAzOTlFNjdjNDhiOWQzMzczOGREMTNDRjc3MkE5NTQ3In0.ooEcC_nMo-06H3NlIiMLa5430WOZOvv_g_D7Vhzl6Og"
+    },
+    {
+      "name": "nier2",
+      "privatekey": "0xcaf9aad5f59540b16b554e08d5e7842136a9f291c7f693e05d4c78d1822bc22c",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODI4OTYwMTUsImlhdCI6MTc1MTM2MDAxNSwic3ViIjoiMHhCQjhiM2VkZkI0NGRCOUI5M2Q0YWRBMmI3QUM0YTU2ZjRkZjk5NjcwIn0.G0pplbyrX5Ty3LscSfiOhiwAbUeduS-eSP9rJgqxAd8"
     }
   ]
 }

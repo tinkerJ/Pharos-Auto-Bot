@@ -52,6 +52,42 @@ const OPENFI_ABIS = {
     "function withdraw(address asset, uint256 amount, address to) external",
   ],
 };
+/**
+ * 延迟指定毫秒数
+ * @param {number} ms - 延迟的毫秒数
+ * @returns {Promise<void>} - 一个在指定毫秒数后解析的 Promise
+ */
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+/**
+ * 串行执行异步函数数组
+ * @param {Array<Function>} asyncFunctions - 包含异步函数的数组
+ * @returns {Promise<Array>} - 包含所有异步函数执行结果的数组
+ */
+async function sequentialPromiseAll(asyncFunctions) {
+  console.log(asyncFunctions)
+  const results = [];
+  // 遍历异步函数数组
+  for (const i = 0; i< asyncFunctions.length; i++) {
+    const asyncFunc = asyncFunctions[i];
+    // 执行当前异步函数并等待结果
+    if (typeof asyncFunc !== 'function') {
+      console.log(`System | Warning: Found non-function element in asyncFunctions array: ${asyncFunc}`);
+      continue;
+    }
+    const result = await asyncFunc();
+    // 将结果添加到结果数组中
+    results.push(result);
+    // 延迟 3 秒
+    // console.log(`System | ${asyncFunc.name} | Completed`);
+    await delay(3000);
+  }
+  return results;
+}
+
 
 // Utility to generate random amount in range (inclusive, in PHRS)
 function getRandomAmount(min, max) {
@@ -140,7 +176,7 @@ async function performSwapUSDC(logger) {
   const retryDelay = 2000;
   const transactionDelay = 1000;
 
-  const swapTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -217,9 +253,7 @@ async function performSwapUSDC(logger) {
     } catch (u) {
       logger(`System | ${$} | Error: ${chalk.red(u.message)}`);
     }
-  });
-
-  await Promise.all(swapTasks);
+  }
 }
 
 async function performSwapUSDT(logger) {
@@ -227,7 +261,7 @@ async function performSwapUSDT(logger) {
   const retryDelay = 2000;
   const transactionDelay = 1000;
 
-  const swapTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -304,9 +338,7 @@ async function performSwapUSDT(logger) {
     } catch (u) {
       logger(`System | ${$} | Error: ${chalk.red(u.message)}`);
     }
-  });
-
-  await Promise.all(swapTasks);
+  }
 }
 
 async function checkBalanceAndApprove(wallet, tokenAddress, spender, logger) {
@@ -328,7 +360,7 @@ async function checkBalanceAndApprove(wallet, tokenAddress, spender, logger) {
 }
 
 async function addLpUSDC(logger) {
-  const lpTasks = global.selectedWallets?.map(async (a) => {
+ for (let a of global.selectedWallets){
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -380,13 +412,11 @@ async function addLpUSDC(logger) {
     } catch (error) {
       logger(`System | ${$} | Error: ${chalk.red(error.message)}`);
     }
-  });
-
-  await Promise.all(lpTasks);
+  }
 }
 
 async function addLpUSDT(logger) {
-  const lpTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -438,13 +468,12 @@ async function addLpUSDT(logger) {
     } catch (error) {
       logger(`System | ${$} | Error: ${chalk.red(error.message)}`);
     }
-  });
-
-  await Promise.all(lpTasks);
+  }
 }
 
 async function randomTransfer(logger) {
-  const transferTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
+     
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -481,13 +510,14 @@ async function randomTransfer(logger) {
     } catch (error) {
       logger(`System | ${$} | Error: ${chalk.red(error.message)}`);
     }
-  });
+  }
 
-  await Promise.all(transferTasks);
 }
 
 async function accountCheck(logger) {
-  const checkTasks = global.selectedWallets?.map(async (a) => {
+  
+  for (let a of global.selectedWallets){
+     
     let { privatekey: t, token: $, name: r } = a;
     if (!t || !$) {
       logger(`System | Skipping ${r || "unknown"}: Missing data`);
@@ -511,13 +541,11 @@ async function accountCheck(logger) {
     } catch (error) {
       logger(`System | ${r} | Error: ${chalk.red(error.response?.data?.message || error.message)}`);
     }
-  });
-
-  await Promise.all(checkTasks);
+  }
 }
 
 async function accountLogin(logger) {
-  const loginTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
     let { privatekey: t, token: $, name: r } = a;
     if (!t) {
       logger(`System | Skipping ${r || "unknown"}: Missing private key`);
@@ -545,9 +573,7 @@ async function accountLogin(logger) {
     } catch (error) {
       logger(`System | ${r} | Failed to login: ${chalk.red(error.message)}`);
     }
-  });
-
-  await Promise.all(loginTasks);
+  }
 
   let walletFile = path.join(__dirname, "./wallet.json");
   try {
@@ -566,7 +592,8 @@ async function accountLogin(logger) {
 }
 
 async function accountCheckIn(logger) {
-  const checkInTasks = global.selectedWallets?.map(async (a) => {
+   for (let a of global.selectedWallets){
+     
     let { privatekey: t, token: $, name: r } = a;
     if (!t || !$) {
       logger(`System | Skipping ${r || "unknown"}: Missing data`);
@@ -591,13 +618,13 @@ async function accountCheckIn(logger) {
     } catch (error) {
       logger(`System | ${r} | Error: ${chalk.red(error.response?.data?.message || error.message)}`);
     }
-  });
+  }
 
-  await Promise.all(checkInTasks);
+  // await sequentialPromiseAll(checkInTasks);
 }
 
 async function claimFaucetUSDC(logger) {
-  const faucetTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -623,15 +650,13 @@ async function claimFaucetUSDC(logger) {
     } catch (error) {
       logger(`System | ${$} | USDC Claim Error: ${chalk.red(error.response?.data?.message || error.message)}`);
     }
-  });
-
-  await Promise.all(faucetTasks);
+  }
 }
 
 async function socialTask(logger) {
   const taskIds = [201, 202, 203, 204];
-  const socialTasks = global.selectedWallets?.map(async (t) => {
-    let { privatekey: $, token: r, name: o } = t;
+  for (let a of global.selectedWallets){
+    let { privatekey: $, token: r, name: o } = a;
     if (!$ || !r) {
       logger(`System | Skipping ${o || "unknown"}: Missing data`);
       return;
@@ -659,13 +684,11 @@ async function socialTask(logger) {
       }
       await etc.delay(5000);
     }
-  });
-
-  await Promise.all(socialTasks);
+  }
 }
 
 async function accountClaimFaucet(logger) {
-  const faucetTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
     let { privatekey: t, token: $, name: r } = a;
     if (!t || !$) {
       logger(`System | Skipping ${r || "unknown"}: Missing data`);
@@ -700,9 +723,7 @@ async function accountClaimFaucet(logger) {
     } catch (error) {
       logger(`System | ${r} | Error: ${chalk.red(error.response?.data?.message || error.message)}`);
     }
-  });
-
-  await Promise.all(faucetTasks);
+  }
 }
 
 async function mintGotchipus(logger) {
@@ -710,7 +731,7 @@ async function mintGotchipus(logger) {
   const retryDelay = 2000;
   const transactionDelay = 1000;
 
-  const mintTasks = global.selectedWallets?.map(async (a) => {
+ for (let a of global.selectedWallets){
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -769,9 +790,7 @@ async function mintGotchipus(logger) {
     } catch (u) {
       logger(`System | ${$} | Error: ${chalk.red(u.message)}`);
     }
-  });
-
-  await Promise.all(mintTasks);
+  }
   logger(`System | Completed minting`);
 }
 
@@ -781,7 +800,7 @@ async function deployPharos(logger) {
   const transactionDelay = 5000;
   const proxies = loadProxies(logger);
 
-  const deployTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -856,9 +875,7 @@ async function deployPharos(logger) {
     } catch (u) {
       logger(`System | ${$} | Error: ${chalk.red(u.message)}`);
     }
-  });
-
-  await Promise.all(deployTasks);
+  }
   logger(`System | Completed Pharos deployment`);
 }
 
@@ -877,7 +894,7 @@ async function openFi(logger) {
     withdraw: "10",
   };
 
-  const openFiTasks = global.selectedWallets?.map(async (a) => {
+  for (let a of global.selectedWallets){
     let { privatekey: t, name: $ } = a;
     if (!t) {
       logger(`System | Skipping ${$ || "unknown"}: Missing private key`);
@@ -1086,9 +1103,7 @@ await etc.delay(walletDelay);
     } catch (e) {
       logger(`System | ${$} | Error: ${chalk.red(e.message)}`);
     }
-  });
-
-  await Promise.all(openFiTasks);
+  }
   logger(`System | Completed OpenFi tasks`);
 }
 
