@@ -6,7 +6,8 @@ bin-release/
 node_modules
 # Other files and folders
 .settings/
-
+wallet.json
+proxy.txt
 # Executables
 *.swf
 *.air
